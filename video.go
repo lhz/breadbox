@@ -1,3 +1,6 @@
+// Package video implements constants and functions related to
+// the VIC-II video interface chip, such as colors.
+
 package video
 
 import (
@@ -7,7 +10,7 @@ import (
 	"strings"
 )
 
-
+// Color index names
 const (
 	Black = iota
 	White
@@ -27,11 +30,13 @@ const (
 	LightGrey
 )
 
-
+// Palette looks up a color set by name and returns an array of Color
+// values corresponding to each 16 colors in the set.
+// Valid names are: "pepto", "levy", "vice" and "vice-old"
 func Palette(name string) []color.Color {
 	hexValues, ok := paletteMap[name]
 	if !ok {
-		panic(fmt.Sprintf("breadbox/video: Invalid palette name %v", name))
+		panic(fmt.Sprintf("breadbox/video: Invalid palette name %q", name))
 	}
 	colors := make([]color.Color, 16)
 	for i, value := range strings.Split(hexValues, ":") {
@@ -40,7 +45,6 @@ func Palette(name string) []color.Color {
 	return colors
 }
 
-
 func hexColor(value string) color.Color {
 	rgb, err := hex.DecodeString(value)
 	if err != nil {
@@ -48,7 +52,6 @@ func hexColor(value string) color.Color {
 	}
 	return color.RGBA{rgb[0], rgb[1], rgb[2], 255}
 }
-
 
 var paletteMap = map[string]string{
 	"pepto":    "000000:ffffff:68372b:70a4b2:6f3d86:588d43:352879:b8c76f:6f4f25:433900:9a6759:444444:6c6c6c:9ad284:6c5eb5:959595",
