@@ -40,12 +40,52 @@ func (pic *Pic) PixelsMC(xoffset, yoffset, width, height int) [][]byte {
 	return pix
 }
 
+// CellMC extracts a 4x8 pixels multicolor cell as a 10-byte array,
+// the first 8 bytes are bitmap data, followed by a screen byte and
+// a colmap byte
+func (pic *Pic) CellMC(xoffset, yoffset int) []byte {
+	cell := make([]byte, 10)
+	pixels := pic.PixelsMC(xoffset, yoffset, 4, 8)
+	colors := colorsUsed(pixels, pic.BgColor)
+	for len(colors) < 4 {
+		colors = append(colors, 0)
+	}
+	index := make(map[byte]byte)
+	for i, c := range colors {
+		if _, found := index[c]; !found {
+			index[c] = byte(i)
+		}
+	}
+	var c, i byte
+	for y := 0; y < 8; y++ {
+		for x := 0; x < 4; x++ {
+			c = pixels[y][x]
+			i = index[c]
+			cell[y] = (cell[y] << 2) + i
+		}
+	}
+	cell[8] = colors[1] * 16 + colors[2]
+	cell[9] = colors[3]
+	return cell
+}
+
+// ToKoala extracts a full-screen 160x200 multicolor image in Koala format
 func (pic *Pic) ToKoala(xoffset, yoffset int) *Koala {
 	koala := Koala{
 		Bitmap: make([]byte, 8000),
 		Screen: make([]byte, 1000),
 		Colmap: make([]byte, 1000),
 		BgColor: pic.BgColor}
+	for row := 0; row < 25; row++ {
+		for col := 0; col < 40; col++ {
+			cell := pic.CellMC(xoffset + col * 4, yoffset + row * 8)
+			for i := 0; i < 8; i++ {
+				koala.Bitmap[row * 320 + col * 8 + i] = cell[i]
+			}
+			koala.Screen[row * 40 + col] = cell[8]
+			koala.Colmap[row * 40 + col] = cell[9]
+		}
+	}
 	return &koala
 }
 
@@ -97,6 +137,27 @@ func remapIndices(from color.Palette, to []color.Color) []byte {
 	for index, color := range to {
 		i := from.Index(color)
 		colors[i] = byte(index)
+	}
+	return colors
+}
+
+func histogram(pixels [][]byte) map[byte]int {
+	counts := make(map[byte]int)
+	for _, row := range pixels {
+		for _, col := range row {
+			counts[col]++
+		}
+	}
+	return counts
+}
+
+func colorsUsed(pixels [][]byte, bgColor byte) []byte {
+	counts := histogram(pixels)
+	colors := []byte{bgColor}
+	for key, _ := range counts {
+		if key != bgColor {
+			colors = append(colors, key)
+		}
 	}
 	return colors
 }
