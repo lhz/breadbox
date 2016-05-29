@@ -1,7 +1,7 @@
 // Package video implements constants and functions related to
 // the VIC-II video interface chip, such as colors.
 
-package video
+package gfx
 
 import (
 	"encoding/hex"
