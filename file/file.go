@@ -5,7 +5,10 @@ import (
 )
 
 func WriteBin(filename string, address int, content []byte) {
-	ioutil.WriteFile(filename, append(addressHeader(address), content...), 0644)
+	err := ioutil.WriteFile(filename, append(addressHeader(address), content...), 0644)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func addressHeader(address int) []byte {

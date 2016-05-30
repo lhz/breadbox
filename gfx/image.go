@@ -13,45 +13,62 @@ type Image struct {
 	img     *img.Paletted
 	palette []color.Color
 	colors  []byte
+	mcol    bool
 	BgColor byte
 }
 
 // NewImage reads an image from a PNG file and returns a Image pointer
-func NewImage(filename string, bgColor byte) *Image {
+func NewImage(filename string, mcol bool, bgColor byte) *Image {
 	img := pngImage(filename)
-	return &Image{img, Pepto, remapIndices(img.Palette, Pepto), bgColor}
+	return &Image{img, Pepto, remapIndices(img.Palette, Pepto), mcol, bgColor}
 }
 
-// Pixels return an array of pixels (color indices) from the given area in the Image
+// MulticolorImage reads an image from a PNG file and returns a Image pointer
+func MulticolorImage(filename string, bgColor byte) *Image {
+	return NewImage(filename, true, bgColor)
+}
+
+// HiresImage reads an image from a PNG file and returns a Image pointer
+func HiresImage(filename string, bgColor byte) *Image {
+	return NewImage(filename, false, bgColor)
+}
+
+// KoalaImage reads an image from a PNG file and returns a Koala pointer
+func KoalaImage(filename string, bgColor byte) *Koala {
+	image := MulticolorImage(filename, bgColor)
+	return image.ToKoala(0, 0)
+}
+
+func (image *Image) PixelAt(x, y int) byte {
+	if (img.Point{x, y}).In(image.img.Rect) {
+		return image.colors[image.img.ColorIndexAt(x, y)]
+	} else {
+		return image.BgColor
+	}
+}
+
+// Pixels return an array of multicolor pixels (color indices) from the given area in the Image
 func (image *Image) Pixels(xoffset, yoffset, width, height int) [][]byte {
 	pix := make([][]byte, height)
 	for y := 0; y < height; y++ {
 		pix[y] = make([]byte, width)
 		for x := 0; x < width; x++ {
-			pix[y][x] = image.colors[image.img.ColorIndexAt(xoffset + x, yoffset + y)]
+			if image.mcol {
+				pix[y][x] = image.PixelAt((xoffset + x) * 2, yoffset + y)
+			} else {
+				pix[y][x] = image.PixelAt(xoffset + x, yoffset + y)
+			}
 		}
 	}
 	return pix
 }
 
-// Pixels return an array of multicolor pixels (color indices) from the given area in the Image
-func (image *Image) PixelsMC(xoffset, yoffset, width, height int) [][]byte {
-	pix := make([][]byte, height)
-	for y := 0; y < height; y++ {
-		pix[y] = make([]byte, width)
-		for x := 0; x < width; x++ {
-			pix[y][x] = image.colors[image.img.ColorIndexAt((xoffset + x) * 2, yoffset + y)]
-		}
-	}
-	return pix
-}
-
-// CellMC extracts a 4x8 pixels multicolor cell as a 10-byte array,
+// MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
 // the first 8 bytes are bitmap data, followed by a screen byte and
 // a colmap byte
-func (image *Image) CellMC(xoffset, yoffset int) []byte {
+func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
 	cell := make([]byte, 10)
-	pixels := image.PixelsMC(xoffset, yoffset, 4, 8)
+	pixels := image.Pixels(xoffset, yoffset, 4, 8)
 	colors := colorsUsed(pixels, image.BgColor)
 	for len(colors) < 4 {
 		colors = append(colors, 0)
@@ -84,7 +101,7 @@ func (image *Image) ToKoala(xoffset, yoffset int) *Koala {
 		BgColor: image.BgColor}
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
-			cell := image.CellMC(xoffset + col * 4, yoffset + row * 8)
+			cell := image.MulticolorCell(xoffset + col * 4, yoffset + row * 8)
 			for i := 0; i < 8; i++ {
 				koala.Bitmap[row * 320 + col * 8 + i] = cell[i]
 			}
@@ -103,20 +120,20 @@ type Koala struct {
 	BgColor byte
 }
 
-// Bytes returns Koala format as raw bytes without padding
-func (koala *Koala) Bytes() []byte {
-	return bytes.Join([][]byte{
-		koala.Bitmap, koala.Screen, koala.Colmap,
-		[]byte{koala.BgColor}}, []byte{})
-}
-
-// BytesAligned returns Koala format as raw bytes with padding so that
-// each segment (bitmap, screen and colmap) is aligned for direct use
-func (koala *Koala) BytesAligned() []byte {
-	return bytes.Join([][]byte{
-		koala.Bitmap, make([]byte, 192),
-		koala.Screen, make([]byte, 24),
-		koala.Colmap, []byte{koala.BgColor}}, []byte{})
+// Bytes returns Koala format as raw bytes. If align is false, there
+// will be no padding between data segments. If align is true, screen
+// and color map data will be aligned to 1024 bytes offsets.
+func (koala *Koala) Bytes(align bool) []byte {
+	if align {
+		return bytes.Join([][]byte{
+			koala.Bitmap, make([]byte, 192),
+			koala.Screen, make([]byte, 24),
+			koala.Colmap, []byte{koala.BgColor}}, []byte{})
+	} else {
+		return bytes.Join([][]byte{
+			koala.Bitmap, koala.Screen, koala.Colmap,
+			[]byte{koala.BgColor}}, []byte{})
+	}
 }
 
 func pngImage(filename string) *img.Paletted {
