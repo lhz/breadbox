@@ -1,8 +1,8 @@
 package file
 
 import (
+	"fmt"
 	"io/ioutil"
-	// "bytes"
 )
 
 const (
@@ -26,7 +26,8 @@ func (p *Program) Inject(filename string) {
 	}
 
 	address := int(content[0]) + 256 * int(content[1])
-	copy(p.memory[address:address+len(content)-2], content[2:])
+	copy(p.memory[address:MemSize], content[2:])
+	fmt.Printf("Copying to $%04x-$%04x from file %q\n", address, address+len(content)-3, filename)
 
 	if address < p.min {
 		p.min = address
@@ -39,4 +40,5 @@ func (p *Program) Inject(filename string) {
 
 func (p *Program) WriteFile(target string) {
 	WriteBin(target, p.min, p.memory[p.min:p.max+1])
+	fmt.Printf("Result file %q spans range $%04x-$%04x.\n", target, p.min, p.max)
 }
