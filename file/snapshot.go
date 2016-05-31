@@ -36,9 +36,8 @@ func (s *Snapshot) Inject(filename string) {
 	}
 
 	address := int(content[0]) + 256 * int(content[1])
-	for i := 0; i < len(content) - 2; i++ {
-		s.content[s.c64mem + address + i] = content[2 + i]
-	}
+	offset  := s.c64mem + address
+	copy(s.content[offset:offset+len(content)-2], content[2:])
 	return
 }
 
