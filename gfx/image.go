@@ -79,12 +79,9 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
 			index[c] = byte(i)
 		}
 	}
-	var c, i byte
 	for y := 0; y < 8; y++ {
 		for x := 0; x < 4; x++ {
-			c = pixels[y][x]
-			i = index[c]
-			cell[y] = (cell[y] << 2) + i
+			cell[y] = (cell[y] << 2) + index[pixels[y][x]]
 		}
 	}
 	cell[8] = colors[1] * 16 + colors[2]
