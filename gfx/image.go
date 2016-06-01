@@ -36,7 +36,7 @@ func HiresImage(filename string, bgColor byte) *Image {
 // KoalaImage reads an image from a PNG file and returns a Koala pointer
 func KoalaImage(filename string, bgColor byte) *Koala {
 	image := MulticolorImage(filename, bgColor)
-	return image.ToKoala(0, 0)
+	return image.Koala(0, 0)
 }
 
 func (image *Image) PixelAt(x, y int) byte {
@@ -89,8 +89,8 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
 	return cell
 }
 
-// ToKoala extracts a full-screen 160x200 multicolor image in Koala format
-func (image *Image) ToKoala(xoffset, yoffset int) *Koala {
+// Koala extracts a full-screen 160x200 multicolor image in Koala format
+func (image *Image) Koala(xoffset, yoffset int) *Koala {
 	koala := Koala{
 		Bitmap: make([]byte, 8000),
 		Screen: make([]byte, 1000),
