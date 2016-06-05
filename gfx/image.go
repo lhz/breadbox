@@ -99,9 +99,7 @@ func (image *Image) Koala(xoffset, yoffset int) *Koala {
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
 			cell := image.MulticolorCell(xoffset + col * 4, yoffset + row * 8)
-			for i := 0; i < 8; i++ {
-				koala.Bitmap[row * 320 + col * 8 + i] = cell[i]
-			}
+			copy(koala.Bitmap[row * 320 + col * 8:], cell[0:8])
 			koala.Screen[row * 40 + col] = cell[8]
 			koala.Colmap[row * 40 + col] = cell[9]
 		}
