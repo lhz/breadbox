@@ -48,6 +48,17 @@ func (image *Image) PixelAt(x, y int) byte {
 	}
 }
 
+func (image *Image) HiresByte(x, y, c int) byte {
+	value := byte(0)
+	for i := 0; i < 8; i++ {
+		p := image.PixelAt(x + i, y)
+		if p == byte(c) {
+			value += byte(1 << uint(7 - i))
+		}
+	}
+	return value
+}
+
 // Pixels return an array of multicolor pixels (color indices) from the given area in the Image
 func (image *Image) Pixels(xoffset, yoffset, width, height int) [][]byte {
 	pix := make([][]byte, height)
