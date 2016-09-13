@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"bytes"
+	"fmt"
 	img "image"
 	"image/color"
 	"image/png"
@@ -47,6 +48,17 @@ func (image *Image) PixelAt(x, y int) byte {
 	}
 }
 
+func (image *Image) HiresByte(x, y, c int) byte {
+	value := byte(0)
+	for i := 0; i < 8; i++ {
+		p := image.PixelAt(x + i, y)
+		if p == byte(c) {
+			value += byte(1 << uint(7 - i))
+		}
+	}
+	return value
+}
+
 // Pixels return an array of multicolor pixels (color indices) from the given area in the Image
 func (image *Image) Pixels(xoffset, yoffset, width, height int) [][]byte {
 	pix := make([][]byte, height)
@@ -61,6 +73,25 @@ func (image *Image) Pixels(xoffset, yoffset, width, height int) [][]byte {
 		}
 	}
 	return pix
+}
+
+// MulticolorSprite extracts a multicolor sprite as a 64-byte array
+func (image *Image) MulticolorSprite(xoffset, yoffset int, colors []byte) []byte {
+	spr := make([]byte, 64)
+	pixels := image.Pixels(xoffset, yoffset, 12, 21)
+	fmt.Printf("[%d,%d] %v\n", xoffset, yoffset, pixels)
+	for y := 0; y < 21; y++ {
+		for c := 0; c < 3; c++ {
+			i := y * 3 + c
+			for x := 0; x < 4; x++ {
+				n := bytes.IndexByte(colors, pixels[y][c * 4 + x])
+				if n >= 0 {
+					spr[i] = (spr[i] << 2) + byte(n)
+				}
+			}
+		}
+	}
+	return spr
 }
 
 // MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
