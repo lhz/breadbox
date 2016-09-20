@@ -39,7 +39,7 @@ func main() {
 
     img := image.NewPaletted(image.Rect(0, 0, 320, 200), gfx.Pepto)
 
-	bkg := koala[10002]
+	bkg := koala[10002] & 0x0F
 
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
