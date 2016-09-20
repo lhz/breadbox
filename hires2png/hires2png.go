@@ -23,26 +23,31 @@ func main() {
 
 	sourceFile, targetFile := os.Args[1], os.Args[2]
 
-	koala := make([]byte, 9194)
+	hires := make([]byte, 9194)
 	f, err := os.Open(sourceFile)
 	if err != nil {
 		log.Fatalf("Can't open file %s for reading: %v", sourceFile, err)
 		return
 	}
 
-	_, err = f.Read(koala)
+	size, err := f.Read(hires)
 	if err != nil {
 		log.Fatalf("Can't read from file %s: %v", sourceFile, err)
 		return
+	}
+
+	screen := 8002
+	if size >= 9194 {
+		screen = 8194
 	}
 
     img := image.NewPaletted(image.Rect(0, 0, 320, 200), gfx.Pepto)
 
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
-			scr := koala[8194 + row * 40 + col]
+			scr := hires[screen + row * 40 + col]
 			for y := 0; y < 8; y++ {
-				byte := koala[2 + row * 320 + col * 8 + y]
+				byte := hires[2 + row * 320 + col * 8 + y]
 				for x := 0; x < 8; x++ {
 					if byte & mask[x] > 0 {
 						c = (scr & 0xF0) >> 4
