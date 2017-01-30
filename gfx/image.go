@@ -2,7 +2,6 @@ package gfx
 
 import (
 	"bytes"
-	"fmt"
 	img "image"
 	"image/color"
 	"image/png"
@@ -51,9 +50,9 @@ func (image *Image) PixelAt(x, y int) byte {
 func (image *Image) HiresByte(x, y, c int) byte {
 	value := byte(0)
 	for i := 0; i < 8; i++ {
-		p := image.PixelAt(x + i, y)
+		p := image.PixelAt(x+i, y)
 		if p == byte(c) {
-			value += byte(1 << uint(7 - i))
+			value += byte(1 << uint(7-i))
 		}
 	}
 	return value
@@ -66,9 +65,9 @@ func (image *Image) Pixels(xoffset, yoffset, width, height int) [][]byte {
 		pix[y] = make([]byte, width)
 		for x := 0; x < width; x++ {
 			if image.mcol {
-				pix[y][x] = image.PixelAt((xoffset + x) * 2, yoffset + y)
+				pix[y][x] = image.PixelAt((xoffset+x)*2, yoffset+y)
 			} else {
-				pix[y][x] = image.PixelAt(xoffset + x, yoffset + y)
+				pix[y][x] = image.PixelAt(xoffset+x, yoffset+y)
 			}
 		}
 	}
@@ -79,12 +78,12 @@ func (image *Image) Pixels(xoffset, yoffset, width, height int) [][]byte {
 func (image *Image) MulticolorSprite(xoffset, yoffset int, colors []byte) []byte {
 	spr := make([]byte, 64)
 	pixels := image.Pixels(xoffset, yoffset, 12, 21)
-	fmt.Printf("[%d,%d] %v\n", xoffset, yoffset, pixels)
+	//fmt.Printf("[%d,%d] %v\n", xoffset, yoffset, pixels)
 	for y := 0; y < 21; y++ {
 		for c := 0; c < 3; c++ {
-			i := y * 3 + c
+			i := y*3 + c
 			for x := 0; x < 4; x++ {
-				n := bytes.IndexByte(colors, pixels[y][c * 4 + x])
+				n := bytes.IndexByte(colors, pixels[y][c*4+x])
 				if n >= 0 {
 					spr[i] = (spr[i] << 2) + byte(n)
 				}
@@ -115,7 +114,7 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
 			cell[y] = (cell[y] << 2) + index[pixels[y][x]]
 		}
 	}
-	cell[8] = colors[1] * 16 + colors[2]
+	cell[8] = colors[1]*16 + colors[2]
 	cell[9] = colors[3]
 	return cell
 }
@@ -123,16 +122,16 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
 // Koala extracts a full-screen 160x200 multicolor image in Koala format
 func (image *Image) Koala(xoffset, yoffset int) *Koala {
 	koala := Koala{
-		Bitmap: make([]byte, 8000),
-		Screen: make([]byte, 1000),
-		Colmap: make([]byte, 1000),
+		Bitmap:  make([]byte, 8000),
+		Screen:  make([]byte, 1000),
+		Colmap:  make([]byte, 1000),
 		BgColor: image.BgColor}
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
-			cell := image.MulticolorCell(xoffset + col * 4, yoffset + row * 8)
-			copy(koala.Bitmap[row * 320 + col * 8:], cell[0:8])
-			koala.Screen[row * 40 + col] = cell[8]
-			koala.Colmap[row * 40 + col] = cell[9]
+			cell := image.MulticolorCell(xoffset+col*4, yoffset+row*8)
+			copy(koala.Bitmap[row*320+col*8:], cell[0:8])
+			koala.Screen[row*40+col] = cell[8]
+			koala.Colmap[row*40+col] = cell[9]
 		}
 	}
 	return &koala
