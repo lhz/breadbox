@@ -40,6 +40,8 @@ func main() {
 		palette = gfx.Colodore
 	case "vice":
 		palette = gfx.Vice
+	case "vicenew":
+		palette = gfx.ViceNew
 	case "levy":
 		palette = gfx.Levy
 	default:

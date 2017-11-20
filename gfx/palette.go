@@ -36,6 +36,7 @@ var (
 	Levy     = palette("040204:fcfefc:cc3634:84f2dc:cc5ac4:5cce34:4436cc:f4ee5c:d47e34:945e34:fc9a94:5c5a5c:8c8e8c:9cfe9c:74a2ec:c4c2c4")
 	Vice     = palette("000000:fdfefc:be1a24:30e6c6:b41ae2:1fd21e:211bae:dff60a:b84104:6a3304:fe4a57:424540:70746f:59fe59:5f53fe:a4a7a2")
 	ViceOld  = palette("000000:d5d5d5:72352c:659fa6:733a91:568d35:2e237d:aeb75e:774f1e:4b3c00:9c635a:474747:6b6b6b:8fc271:675db6:8f8f8f")
+	ViceNew  = palette("000000:ffffff:b85438:8decff:ba56e4:79d949:553ee5:fbff79:bd7c1b:7e6400:f29580:6f716e:a2a4a1:cdff9d:a18aff:d3d5d2")
 )
 
 func palette(values string) []color.Color {
