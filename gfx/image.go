@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"bytes"
+	"fmt"
 	img "image"
 	"image/color"
 	"image/png"
@@ -20,7 +21,8 @@ type Image struct {
 // NewImage reads an image from a PNG file and returns a Image pointer
 func NewImage(filename string, mcol bool, bgColor byte) *Image {
 	img := pngImage(filename)
-	return &Image{img, Pepto, remapIndices(img.Palette, Pepto), mcol, bgColor}
+	pal := Matching(img.Palette)
+	return &Image{img, pal, remapIndices(img.Palette, pal), mcol, bgColor}
 }
 
 // MulticolorImage reads an image from a PNG file and returns a Image pointer
@@ -96,7 +98,7 @@ func (image *Image) MulticolorSprite(xoffset, yoffset int, colors []byte) []byte
 // MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
 // the first 8 bytes are bitmap data, followed by a screen byte and
 // a colmap byte
-func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
+func (image *Image) MulticolorCell(xoffset, yoffset int) ([]byte, error) {
 	cell := make([]byte, 10)
 	pixels := image.Pixels(xoffset, yoffset, 4, 8)
 	colors := colorsUsed(pixels, image.BgColor)
@@ -116,7 +118,10 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) []byte {
 	}
 	cell[8] = colors[1]*16 + colors[2]
 	cell[9] = colors[3]
-	return cell
+	if len(colors) > 4 {
+		return cell, fmt.Errorf("Too many colors in cell at x=%3d, y=%3d: %v\n", xoffset, yoffset, colors)
+	}
+	return cell, nil
 }
 
 // Koala extracts a full-screen 160x200 multicolor image in Koala format
@@ -128,7 +133,10 @@ func (image *Image) Koala(xoffset, yoffset int) *Koala {
 		BgColor: image.BgColor}
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
-			cell := image.MulticolorCell(xoffset+col*4, yoffset+row*8)
+			cell, err := image.MulticolorCell(xoffset+col*4, yoffset+row*8)
+			if err != nil {
+				os.Stderr.WriteString(err.Error())
+			}
 			copy(koala.Bitmap[row*320+col*8:], cell[0:8])
 			koala.Screen[row*40+col] = cell[8]
 			koala.Colmap[row*40+col] = cell[9]

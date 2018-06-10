@@ -39,6 +39,26 @@ var (
 	ViceNew  = palette("000000:ffffff:b85438:8decff:ba56e4:79d949:553ee5:fbff79:bd7c1b:7e6400:f29580:6f716e:a2a4a1:cdff9d:a18aff:d3d5d2")
 )
 
+func Matching(colors []color.Color) []color.Color {
+	var bestMatch []color.Color
+	var bestScore = 0
+	for _, pal := range [][]color.Color{Colodore, Pepto, Levy, Vice, ViceOld, ViceNew} {
+		score := 0
+		for _, ccol := range colors {
+			for _, pcol := range pal {
+				if ccol == pcol {
+					score++
+				}
+			}
+		}
+		if score >= bestScore {
+			bestScore = score
+			bestMatch = pal
+		}
+	}
+	return bestMatch
+}
+
 func palette(values string) []color.Color {
 	colors := make([]color.Color, 16)
 	for i, value := range strings.Split(values, ":") {
