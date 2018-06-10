@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-var palette = gfx.Pepto
+var palette *gfx.Palette
 
 var mask1 = []byte{128, 32, 8, 2}
 var mask2 = []byte{64, 16, 4, 1}
@@ -33,20 +33,7 @@ func main() {
 		usage()
 	}
 
-	switch *paletteName {
-	case "pepto":
-		palette = gfx.Pepto
-	case "colodore":
-		palette = gfx.Colodore
-	case "vice":
-		palette = gfx.Vice
-	case "vicenew":
-		palette = gfx.ViceNew
-	case "levy":
-		palette = gfx.Levy
-	default:
-		usage()
-	}
+	palette = gfx.Palettes[*paletteName]
 
 	sourceFile := flag.Arg(0)
 	targetFile := flag.Arg(1)
@@ -64,7 +51,7 @@ func main() {
 		return
 	}
 
-	img := image.NewPaletted(image.Rect(0, 0, 320, 200), palette)
+	img := image.NewPaletted(image.Rect(0, 0, 320, 200), palette.Colors)
 
 	bkg := koala[10002] & 0x0F
 
@@ -85,8 +72,8 @@ func main() {
 					} else {
 						c = bkg
 					}
-					img.Set(col*8+x*2, row*8+y, palette[c])
-					img.Set(col*8+x*2+1, row*8+y, palette[c])
+					img.Set(col*8+x*2, row*8+y, palette.Colors[c])
+					img.Set(col*8+x*2+1, row*8+y, palette.Colors[c])
 				}
 			}
 		}

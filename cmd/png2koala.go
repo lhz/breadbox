@@ -10,8 +10,6 @@ import (
 	"os"
 )
 
-var palette = gfx.Pepto
-
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: %v [flags] <source> <target>\n", os.Args[0])
 	flag.PrintDefaults()

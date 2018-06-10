@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-var palette = gfx.Pepto
+var palette *gfx.Palette
 
 var mask = []byte{128, 64, 32, 16, 8, 4, 2, 1}
 var c byte
@@ -31,18 +31,7 @@ func main() {
 		usage()
 	}
 
-	switch *paletteName {
-	case "pepto":
-		palette = gfx.Pepto
-	case "colodore":
-		palette = gfx.Colodore
-	case "vice":
-		palette = gfx.Vice
-	case "levy":
-		palette = gfx.Levy
-	default:
-		usage()
-	}
+	palette = gfx.Palettes[*paletteName]
 
 	sourceFile := flag.Arg(0)
 	targetFile := flag.Arg(1)
@@ -65,7 +54,7 @@ func main() {
 		screen = 8194
 	}
 
-	img := image.NewPaletted(image.Rect(0, 0, 320, 200), gfx.Pepto)
+	img := image.NewPaletted(image.Rect(0, 0, 320, 200), gfx.Pepto.Colors)
 
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
@@ -78,7 +67,7 @@ func main() {
 					} else {
 						c = scr & 0x0F
 					}
-					img.Set(col*8+x, row*8+y, palette[c])
+					img.Set(col*8+x, row*8+y, palette.Colors[c])
 				}
 			}
 		}

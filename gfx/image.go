@@ -21,8 +21,8 @@ type Image struct {
 // NewImage reads an image from a PNG file and returns a Image pointer
 func NewImage(filename string, mcol bool, bgColor byte) *Image {
 	img := pngImage(filename)
-	pal := Matching(img.Palette)
-	return &Image{img, pal, remapIndices(img.Palette, pal), mcol, bgColor}
+	pal := PaletteMatching(img.Palette)
+	return &Image{img, pal.Colors, remapIndices(img.Palette, pal.Colors), mcol, bgColor}
 }
 
 // MulticolorImage reads an image from a PNG file and returns a Image pointer
