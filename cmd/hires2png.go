@@ -23,7 +23,7 @@ func usage() {
 }
 
 func main() {
-	paletteName := flag.String("p", "pepto", "Name of palette to use [pepto|colodore|vice|levy]")
+	paletteName := flag.String("p", "colodore", "Name of palette to use [colodore|pepto|levy|vice|vice_new|vice_old]")
 
 	flag.Parse()
 
@@ -31,7 +31,7 @@ func main() {
 		usage()
 	}
 
-	palette = gfx.Palettes[*paletteName]
+	palette = gfx.PaletteByName(*paletteName)
 
 	sourceFile := flag.Arg(0)
 	targetFile := flag.Arg(1)
@@ -54,7 +54,7 @@ func main() {
 		screen = 8194
 	}
 
-	img := image.NewPaletted(image.Rect(0, 0, 320, 200), gfx.Pepto.Colors)
+	img := image.NewPaletted(image.Rect(0, 0, 320, 200), palette.Colors)
 
 	for row := 0; row < 25; row++ {
 		for col := 0; col < 40; col++ {
@@ -67,7 +67,7 @@ func main() {
 					} else {
 						c = scr & 0x0F
 					}
-					img.Set(col*8+x, row*8+y, palette.Colors[c])
+					img.Set(col*8+x, row*8+y, palette.Color(int(c)))
 				}
 			}
 		}
