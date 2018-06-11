@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/lhz/breadbox/file"
-	"github.com/lhz/breadbox/gfx"
+	"github.com/lhz/breadbox/pkg/file"
+	"github.com/lhz/breadbox/pkg/gfx"
 
 	"flag"
 	"fmt"

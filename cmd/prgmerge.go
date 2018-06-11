@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/lhz/breadbox/file"
 	"fmt"
 	"os"
+
+	"github.com/lhz/breadbox/pkg/file"
 )
 
 func main() {

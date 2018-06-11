@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/lhz/breadbox/file"
+	"github.com/lhz/breadbox/pkg/file"
 )
 
 func main() {
