@@ -17,8 +17,11 @@ func usage() {
 
 func main() {
 
-	var bgCol, xOffset, yOffset int
+	var align bool
+	var address, bgCol, xOffset, yOffset int
+	flag.BoolVar(&align, "a", false, "Align screen and colormap to page")
 	flag.IntVar(&bgCol, "b", 0, "Background color (0-15)")
+	flag.IntVar(&address, "s", 0x4000, "Start address of koala output")
 	flag.IntVar(&xOffset, "x", 0, "Offset X-coordinate of top left corner")
 	flag.IntVar(&yOffset, "y", 0, "Offset Y-coordinate of top left corner")
 
@@ -34,5 +37,5 @@ func main() {
 	image := gfx.NewImage(sourceFile, true, byte(bgCol))
 	koala := image.Koala(xOffset, yOffset)
 
-	file.WriteBin(targetFile, 0x4000, koala.Bytes(false))
+	file.WriteBin(targetFile, address, koala.Bytes(align))
 }
