@@ -7,8 +7,7 @@ import (
 	"encoding/hex"
 	"image/color"
 	"strings"
-
-	"github.com/amedia/aurora/pkg/log"
+	"log"
 )
 
 type Palette struct {
@@ -67,7 +66,7 @@ func (p *Palette) Color(index int) color.Color {
 func PaletteByName(name string) *Palette {
 	palette, ok := PaletteMap[name]
 	if !ok {
-		log.Errorf("Invalid palette name %q, defaulting to %q.", name, "colodore")
+		log.Printf("Invalid palette name %q, defaulting to %q.\n", name, "colodore")
 		return Colodore
 	}
 	return palette
