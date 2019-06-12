@@ -18,21 +18,20 @@ type Image struct {
 	mcol    bool
 	BgColor byte
 	mColors []byte
+	Clashes []Clash
 }
 
-// Cell represents an 8x8 grid (4x8 for multicolor) of pixels
-type Cell struct {
-	column int
-	row    int
-	bytes  []byte
-	colors []byte
+type Clash struct {
+	X      int
+	Y      int
+	Colors []byte
 }
 
 // NewImage reads an image from a PNG file and returns a Image pointer
 func NewImage(filename string, mcol bool, bgColor byte) *Image {
 	img := pngImage(filename)
 	pal := PaletteBestMatch(img.Palette)
-	return &Image{img, pal.Colors, remapIndices(img.Palette, pal.Colors), mcol, bgColor, nil}
+	return &Image{img, pal.Colors, remapIndices(img.Palette, pal.Colors), mcol, bgColor, nil, []Clash{}}
 }
 
 // MulticolorImage reads an image from a PNG file and returns a Image pointer
@@ -146,6 +145,7 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) ([]byte, error) {
 	cell[8] = colors[1]*16 + colors[2]
 	cell[9] = colors[3]
 	if len(colors) > 4 {
+		image.AddClash(xoffset, yoffset, colors)
 		return cell, fmt.Errorf("Too many colors in cell at x=%3d, y=%3d: %v\n", xoffset, yoffset, colors)
 	}
 	return cell, nil
@@ -168,6 +168,7 @@ func (image *Image) HiresCell(xoffset, yoffset int) ([]byte, error) {
 	}
 	cell[8] = colors[0]*16 + colors[1]
 	if len(colors) > 2 {
+		image.AddClash(xoffset, yoffset, colors)
 		return cell, fmt.Errorf("Too many colors in cell at x=%3d, y=%3d: %v\n", xoffset, yoffset, colors)
 	}
 	return cell, nil
@@ -218,6 +219,50 @@ func (image *Image) SetMultiColors(main, mcol1, mcol2 byte) {
 	} else {
 		panic("Can't call SetMultiColors on hires image.")
 	}
+}
+
+func (image *Image) AddClash(xoffset, yoffset int, colors []byte) {
+	image.Clashes = append(image.Clashes,
+		Clash{X: xoffset, Y: yoffset, Colors: colors})
+}
+
+func (image *Image) WriteClashesToPNG(filename string) {
+	t := img.NewRGBA(img.Rectangle{img.Point{0, 0}, img.Point{1042, 652}})
+	for y := 0; y < 652; y++ {
+		for x := 0; x < 1042; x++ {
+			// Space between cells
+			if x%26 < 2 || y%26 < 2 {
+				t.Set(x, y, color.RGBA{0x14, 0x14, 0x14, 0xff})
+			} else {
+				xx := ((x-2)/26)*8 + ((x-2)%26)/3
+				yy := ((y-2)/26)*8 + ((y-2)%26)/3
+				c := image.PixelAt(xx, yy)
+				t.Set(x, y, image.palette[c])
+			}
+		}
+	}
+	ccol := color.RGBA{255, 0, 0, 0xff}
+	for _, clash := range image.Clashes {
+		x := (clash.X / 8) * 26
+		y := (clash.Y / 8) * 26
+		for i := 0; i < 28; i += 2 {
+			t.Set(x+i, y, ccol)
+			t.Set(x+i, y+1, ccol)
+			t.Set(x+i, y+26, ccol)
+			t.Set(x+i, y+27, ccol)
+			t.Set(x, y+i, ccol)
+			t.Set(x+1, y+i, ccol)
+			t.Set(x+26, y+i, ccol)
+			t.Set(x+27, y+i, ccol)
+		}
+	}
+
+	f, err := os.Create(filename)
+	if err != nil {
+		fmt.Errorf("Failed to create file %v: %v", filename, err)
+		return
+	}
+	png.Encode(f, t)
 }
 
 func pngImage(filename string) *img.Paletted {
