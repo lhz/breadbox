@@ -5,9 +5,10 @@ package gfx
 
 import (
 	"encoding/hex"
+	"fmt"
 	"image/color"
-	"strings"
 	"log"
+	"strings"
 )
 
 type Palette struct {
@@ -84,11 +85,15 @@ func PaletteBestMatch(colors []color.Color) *Palette {
 				}
 			}
 		}
-		if score >= bestScore {
+		if pal.Name == "FORCE" {
+			score = 9999
+		}
+		if score > bestScore {
 			bestScore = score
 			bestMatch = pal
 		}
 	}
+	fmt.Printf("Palette %q won with a score of %d.\n", bestMatch.Name, bestScore)
 	return bestMatch
 }
 

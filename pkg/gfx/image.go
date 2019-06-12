@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	img "image"
 	"image/color"
@@ -16,13 +17,14 @@ type Image struct {
 	colors  []byte
 	mcol    bool
 	BgColor byte
+	mColors []byte
 }
 
 // NewImage reads an image from a PNG file and returns a Image pointer
 func NewImage(filename string, mcol bool, bgColor byte) *Image {
 	img := pngImage(filename)
 	pal := PaletteBestMatch(img.Palette)
-	return &Image{img, pal.Colors, remapIndices(img.Palette, pal.Colors), mcol, bgColor}
+	return &Image{img, pal.Colors, remapIndices(img.Palette, pal.Colors), mcol, bgColor, nil}
 }
 
 // MulticolorImage reads an image from a PNG file and returns a Image pointer
@@ -39,6 +41,15 @@ func HiresImage(filename string, bgColor byte) *Image {
 func KoalaImage(filename string, bgColor byte) *Koala {
 	image := MulticolorImage(filename, bgColor)
 	return image.Koala(0, 0)
+}
+
+func (image *Image) Palette() []string {
+	strings := make([]string, len(image.palette))
+	for i, c := range image.palette {
+		r, g, b, _ := c.RGBA()
+		strings[i] = fmt.Sprintf("%02X%02X%02X", r, g, b)
+	}
+	return strings
 }
 
 func (image *Image) PixelAt(x, y int) byte {
@@ -98,6 +109,26 @@ func (image *Image) MulticolorSprite(xoffset, yoffset int, colors []byte) []byte
 // MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
 // the first 8 bytes are bitmap data, followed by a screen byte and
 // a colmap byte
+func (image *Image) MulticolorChar(xoffset, yoffset int) ([]byte, error) {
+	char := make([]byte, 8)
+	pixels := image.Pixels(xoffset, yoffset, 4, 8)
+	colors := []byte{image.BgColor}
+	if image.mColors == nil {
+		return []byte{}, errors.New("MulticolorChar called without setting colors.")
+	}
+	colors = append(colors, image.mColors...)
+	//fmt.Printf("colors: %+v, pixels: %+v\n", colors, pixels)
+	for y := 0; y < 8; y++ {
+		for x := 0; x < 4; x++ {
+			char[y] = (char[y] << 2) + byte(bytes.IndexByte(colors, pixels[y][x]))
+		}
+	}
+	return char, nil
+}
+
+// MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
+// the first 8 bytes are bitmap data, followed by a screen byte and
+// a colmap byte
 func (image *Image) MulticolorCell(xoffset, yoffset int) ([]byte, error) {
 	cell := make([]byte, 10)
 	pixels := image.Pixels(xoffset, yoffset, 4, 8)
@@ -105,20 +136,36 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) ([]byte, error) {
 	for len(colors) < 4 {
 		colors = append(colors, 0)
 	}
-	index := make(map[byte]byte)
-	for i, c := range colors {
-		if _, found := index[c]; !found {
-			index[c] = byte(i)
-		}
-	}
 	for y := 0; y < 8; y++ {
 		for x := 0; x < 4; x++ {
-			cell[y] = (cell[y] << 2) + index[pixels[y][x]]
+			cell[y] = (cell[y] << 2) + byte(bytes.IndexByte(colors, pixels[y][x]))
 		}
 	}
 	cell[8] = colors[1]*16 + colors[2]
 	cell[9] = colors[3]
 	if len(colors) > 4 {
+		return cell, fmt.Errorf("Too many colors in cell at x=%3d, y=%3d: %v\n", xoffset, yoffset, colors)
+	}
+	return cell, nil
+}
+
+// MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
+// the first 8 bytes are bitmap data, followed by a screen byte and
+// a colmap byte
+func (image *Image) HiresCell(xoffset, yoffset int) ([]byte, error) {
+	cell := make([]byte, 9)
+	pixels := image.Pixels(xoffset, yoffset, 8, 8)
+	colors := colorsUsedNoBg(pixels)
+	for len(colors) < 2 {
+		colors = append(colors, 0)
+	}
+	for y := 0; y < 8; y++ {
+		for x := 0; x < 8; x++ {
+			cell[y] = (cell[y] << 1) + byte(bytes.IndexByte(colors, pixels[y][x]))
+		}
+	}
+	cell[8] = colors[0]*16 + colors[1]
+	if len(colors) > 2 {
 		return cell, fmt.Errorf("Too many colors in cell at x=%3d, y=%3d: %v\n", xoffset, yoffset, colors)
 	}
 	return cell, nil
@@ -145,6 +192,24 @@ func (image *Image) Koala(xoffset, yoffset int) *Koala {
 	return &koala
 }
 
+// Koala extracts a full-screen 160x200 multicolor image in Koala format
+func (image *Image) Hires(xoffset, yoffset int) *Hires {
+	hires := Hires{
+		Bitmap: make([]byte, 8000),
+		Screen: make([]byte, 1000)}
+	for row := 0; row < 25; row++ {
+		for col := 0; col < 40; col++ {
+			cell, err := image.HiresCell(xoffset+col*8, yoffset+row*8)
+			if err != nil {
+				os.Stderr.WriteString(err.Error())
+			}
+			copy(hires.Bitmap[row*320+col*8:], cell[0:8])
+			hires.Screen[row*40+col] = cell[8]
+		}
+	}
+	return &hires
+}
+
 // Koala represents a full-screen image in KoalaPainter format
 type Koala struct {
 	Bitmap  []byte
@@ -166,6 +231,34 @@ func (koala *Koala) Bytes(align bool) []byte {
 		return bytes.Join([][]byte{
 			koala.Bitmap, koala.Screen, koala.Colmap,
 			[]byte{koala.BgColor}}, []byte{})
+	}
+}
+
+// Hires represents a full-screen image in Hires format
+type Hires struct {
+	Bitmap []byte
+	Screen []byte
+}
+
+// Bytes returns Hires format as raw bytes. If align is false, there
+// will be no padding between data segments. If align is true, screen
+// data will be aligned to 1024 bytes offset.
+func (hires *Hires) Bytes(align bool) []byte {
+	if align {
+		return bytes.Join([][]byte{
+			hires.Bitmap, make([]byte, 192),
+			hires.Screen, make([]byte, 24)}, []byte{})
+	} else {
+		return bytes.Join([][]byte{
+			hires.Bitmap, hires.Screen}, []byte{})
+	}
+}
+
+func (image *Image) SetMultiColors(main, mcol1, mcol2 byte) {
+	if image.mcol {
+		image.mColors = []byte{main, mcol1, mcol2}
+	} else {
+		panic("Can't call SetMultiColors on hires image.")
 	}
 }
 
@@ -209,6 +302,15 @@ func colorsUsed(pixels [][]byte, bgColor byte) []byte {
 		if key != bgColor {
 			colors = append(colors, key)
 		}
+	}
+	return colors
+}
+
+func colorsUsedNoBg(pixels [][]byte) []byte {
+	counts := histogram(pixels)
+	colors := []byte{}
+	for key, _ := range counts {
+		colors = append(colors, key)
 	}
 	return colors
 }
