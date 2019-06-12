@@ -20,6 +20,14 @@ type Image struct {
 	mColors []byte
 }
 
+// Cell represents an 8x8 grid (4x8 for multicolor) of pixels
+type Cell struct {
+	column int
+	row    int
+	bytes  []byte
+	colors []byte
+}
+
 // NewImage reads an image from a PNG file and returns a Image pointer
 func NewImage(filename string, mcol bool, bgColor byte) *Image {
 	img := pngImage(filename)
@@ -35,12 +43,6 @@ func MulticolorImage(filename string, bgColor byte) *Image {
 // HiresImage reads an image from a PNG file and returns a Image pointer
 func HiresImage(filename string, bgColor byte) *Image {
 	return NewImage(filename, false, bgColor)
-}
-
-// KoalaImage reads an image from a PNG file and returns a Koala pointer
-func KoalaImage(filename string, bgColor byte) *Koala {
-	image := MulticolorImage(filename, bgColor)
-	return image.Koala(0, 0)
 }
 
 func (image *Image) Palette() []string {
@@ -172,6 +174,24 @@ func (image *Image) HiresCell(xoffset, yoffset int) ([]byte, error) {
 }
 
 // Koala extracts a full-screen 160x200 multicolor image in Koala format
+func (image *Image) Hires(xoffset, yoffset int) *Hires {
+	hires := Hires{
+		Bitmap: make([]byte, 8000),
+		Screen: make([]byte, 1000)}
+	for row := 0; row < 25; row++ {
+		for col := 0; col < 40; col++ {
+			cell, err := image.HiresCell(xoffset+col*8, yoffset+row*8)
+			if err != nil {
+				os.Stderr.WriteString(err.Error())
+			}
+			copy(hires.Bitmap[row*320+col*8:], cell[0:8])
+			hires.Screen[row*40+col] = cell[8]
+		}
+	}
+	return &hires
+}
+
+// Koala extracts a full-screen 160x200 multicolor image in Koala format
 func (image *Image) Koala(xoffset, yoffset int) *Koala {
 	koala := Koala{
 		Bitmap:  make([]byte, 8000),
@@ -190,68 +210,6 @@ func (image *Image) Koala(xoffset, yoffset int) *Koala {
 		}
 	}
 	return &koala
-}
-
-// Koala extracts a full-screen 160x200 multicolor image in Koala format
-func (image *Image) Hires(xoffset, yoffset int) *Hires {
-	hires := Hires{
-		Bitmap: make([]byte, 8000),
-		Screen: make([]byte, 1000)}
-	for row := 0; row < 25; row++ {
-		for col := 0; col < 40; col++ {
-			cell, err := image.HiresCell(xoffset+col*8, yoffset+row*8)
-			if err != nil {
-				os.Stderr.WriteString(err.Error())
-			}
-			copy(hires.Bitmap[row*320+col*8:], cell[0:8])
-			hires.Screen[row*40+col] = cell[8]
-		}
-	}
-	return &hires
-}
-
-// Koala represents a full-screen image in KoalaPainter format
-type Koala struct {
-	Bitmap  []byte
-	Screen  []byte
-	Colmap  []byte
-	BgColor byte
-}
-
-// Bytes returns Koala format as raw bytes. If align is false, there
-// will be no padding between data segments. If align is true, screen
-// and color map data will be aligned to 1024 bytes offsets.
-func (koala *Koala) Bytes(align bool) []byte {
-	if align {
-		return bytes.Join([][]byte{
-			koala.Bitmap, make([]byte, 192),
-			koala.Screen, make([]byte, 24),
-			koala.Colmap, []byte{koala.BgColor}}, []byte{})
-	} else {
-		return bytes.Join([][]byte{
-			koala.Bitmap, koala.Screen, koala.Colmap,
-			[]byte{koala.BgColor}}, []byte{})
-	}
-}
-
-// Hires represents a full-screen image in Hires format
-type Hires struct {
-	Bitmap []byte
-	Screen []byte
-}
-
-// Bytes returns Hires format as raw bytes. If align is false, there
-// will be no padding between data segments. If align is true, screen
-// data will be aligned to 1024 bytes offset.
-func (hires *Hires) Bytes(align bool) []byte {
-	if align {
-		return bytes.Join([][]byte{
-			hires.Bitmap, make([]byte, 192),
-			hires.Screen, make([]byte, 24)}, []byte{})
-	} else {
-		return bytes.Join([][]byte{
-			hires.Bitmap, hires.Screen}, []byte{})
-	}
 }
 
 func (image *Image) SetMultiColors(main, mcol1, mcol2 byte) {
