@@ -37,7 +37,7 @@ const (
 )
 
 var PaletteMap = map[string]*Palette{}
-var Colodore, Pepto, Levy, Vice, ViceOld, ViceNew *Palette
+var Colodore, Pepto, Levy, Vice, ViceOld, ViceNew, ViceLars *Palette
 
 func init() {
 	Colodore = MakePalette("colodore",
@@ -58,6 +58,9 @@ func init() {
 	ViceNew = MakePalette("vice_new",
 		"000000:ffffff:b85438:8decff:ba56e4:79d949:553ee5:fbff79",
 		"bd7c1b:7e6400:f29580:6f716e:a2a4a1:cdff9d:a18aff:d3d5d2")
+	ViceLars = MakePalette("lars_3.4",
+		"000000:ffffff:a75035:8ad9ec:b450bb:69c860:4f37e0:eafb5c",
+		"ac7607:746000:da8c75:6a6a6a:999999:b3ffab:9480ff:c5c5c5")
 }
 
 func (p *Palette) Color(index int) color.Color {
