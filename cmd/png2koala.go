@@ -19,7 +19,9 @@ func main() {
 
 	var align bool
 	var address, bgCol, xOffset, yOffset int
+	var clashes string
 	flag.BoolVar(&align, "a", false, "Align screen and colormap to page")
+	flag.StringVar(&clashes, "c", "", "Output PNG showing color clashes.")
 	flag.IntVar(&bgCol, "b", 0, "Background color (0-15)")
 	flag.IntVar(&address, "s", 0x4000, "Start address of koala output")
 	flag.IntVar(&xOffset, "x", 0, "Offset X-coordinate of top left corner")
@@ -36,6 +38,10 @@ func main() {
 
 	image := gfx.NewImage(sourceFile, true, byte(bgCol))
 	koala := image.Koala(xOffset, yOffset)
+
+	if len(clashes) > 0 && len(image.Clashes) > 0 {
+		image.WriteClashesToPNG(clashes)
+	}
 
 	file.WriteBin(targetFile, address, koala.Bytes(align))
 }

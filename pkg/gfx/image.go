@@ -55,6 +55,9 @@ func (image *Image) Palette() []string {
 
 func (image *Image) PixelAt(x, y int) byte {
 	if (img.Point{x, y}).In(image.img.Rect) {
+		//if x == 28 && y == 152 {
+		//fmt.Printf("cia=%d, colors=%+v\n", image.img.ColorIndexAt(x, y), image.colors)
+		//}
 		return image.colors[image.img.ColorIndexAt(x, y)]
 	} else {
 		return image.BgColor
@@ -107,7 +110,7 @@ func (image *Image) MulticolorSprite(xoffset, yoffset int, colors []byte) []byte
 	return spr
 }
 
-// MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
+// MulticolorChar extracts a 4x8 pixels multicolor cell as a 10-byte array,
 // the first 8 bytes are bitmap data, followed by a screen byte and
 // a colmap byte
 func (image *Image) MulticolorChar(xoffset, yoffset int) ([]byte, error) {
@@ -133,6 +136,7 @@ func (image *Image) MulticolorChar(xoffset, yoffset int) ([]byte, error) {
 func (image *Image) MulticolorCell(xoffset, yoffset int) ([]byte, error) {
 	cell := make([]byte, 10)
 	pixels := image.Pixels(xoffset, yoffset, 4, 8)
+	//fmt.Printf("x=%d, y=%d, pixels: %+v\n", xoffset, yoffset, pixels)
 	colors := colorsUsed(pixels, image.BgColor)
 	for len(colors) < 4 {
 		colors = append(colors, 0)
@@ -151,9 +155,8 @@ func (image *Image) MulticolorCell(xoffset, yoffset int) ([]byte, error) {
 	return cell, nil
 }
 
-// MulticolorCell extracts a 4x8 pixels multicolor cell as a 10-byte array,
-// the first 8 bytes are bitmap data, followed by a screen byte and
-// a colmap byte
+// HiresCell extracts a 4x8 pixels multicolor cell as a 9-byte array,
+// the first 8 bytes are bitmap data, followed by a screen byte
 func (image *Image) HiresCell(xoffset, yoffset int) ([]byte, error) {
 	cell := make([]byte, 9)
 	pixels := image.Pixels(xoffset, yoffset, 8, 8)
@@ -280,10 +283,22 @@ func pngImage(filename string) *img.Paletted {
 }
 
 func remapIndices(from color.Palette, to []color.Color) []byte {
+	//fmt.Printf("remapIndices:\n  from: %+v\n  to: %+v\n", from, to)
 	colors := make([]byte, 16)
 	for index, color := range to {
-		i := from.Index(color)
-		colors[i] = byte(index)
+		//i := from.Index(color) // BUGGY! Finds colors not used
+		i := -1
+		for fi, fc := range from {
+			if fc == color {
+				i = fi
+			}
+		}
+		if i >= 0 {
+			//fmt.Printf("    Found color %+v at from[%d], vic-index is %d\n", color, i, index)
+			colors[i] = byte(index)
+		} else {
+			//fmt.Printf("    Color with vic-index %d was not found in image.", index)
+		}
 	}
 	return colors
 }
