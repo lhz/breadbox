@@ -246,7 +246,7 @@ func (image *Image) WriteClashesToPNG(filename string) {
 	}
 	ccol := color.RGBA{255, 0, 0, 0xff}
 	for _, clash := range image.Clashes {
-		x := (clash.X / 8) * 26
+		x := (clash.X / 4) * 26
 		y := (clash.Y / 8) * 26
 		for i := 0; i < 28; i += 2 {
 			t.Set(x+i, y, ccol)
