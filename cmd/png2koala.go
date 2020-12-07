@@ -17,12 +17,13 @@ func usage() {
 
 func main() {
 
-	var align bool
+	var align, front bool
 	var address, bgCol, xOffset, yOffset int
 	var clashes string
 	flag.BoolVar(&align, "a", false, "Align screen and colormap to page")
-	flag.StringVar(&clashes, "c", "", "Output PNG showing color clashes.")
 	flag.IntVar(&bgCol, "b", 0, "Background color (0-15)")
+	flag.StringVar(&clashes, "c", "", "Output PNG showing color clashes.")
+	flag.BoolVar(&front, "f", false, "Put screen and color map data in front of bitmap data")
 	flag.IntVar(&address, "s", 0x4000, "Start address of koala output")
 	flag.IntVar(&xOffset, "x", 0, "Offset X-coordinate of top left corner")
 	flag.IntVar(&yOffset, "y", 0, "Offset Y-coordinate of top left corner")
@@ -43,5 +44,5 @@ func main() {
 		image.WriteClashesToPNG(clashes)
 	}
 
-	file.WriteBin(targetFile, address, koala.Bytes(align))
+	file.WriteBin(targetFile, address, koala.Bytes(align, front))
 }
