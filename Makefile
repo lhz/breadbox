@@ -1,10 +1,10 @@
-koala2png=$(GOPATH)/bin/koala2png
-hires2png=$(GOPATH)/bin/hires2png
-png2koala=$(GOPATH)/bin/png2koala
-png2hires=$(GOPATH)/bin/png2hires
-vsfinject=$(GOPATH)/bin/vsfinject
-mempetscii=$(GOPATH)/bin/mempetscii
-prgmerge=$(GOPATH)/bin/prgmerge
+koala2png=bin/koala2png
+hires2png=bin/hires2png
+png2koala=bin/png2koala
+png2hires=bin/png2hires
+vsfinject=bin/vsfinject
+mempetscii=bin/mempetscii
+prgmerge=bin/prgmerge
 
 default: all
 
